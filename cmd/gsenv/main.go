@@ -3,10 +3,11 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"strings"
+	"syscall"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
@@ -82,13 +83,24 @@ func run(ctx context.Context) error {
 			if err := os.Setenv(basename(secretName), string(secretValue.GetPayload().GetData())); err != nil {
 				return errors.Wrap(err, "error os.Setenv")
 			}
-			// FIXME: when the secret value is unfavourable for shell, this will be a problem.
-			fmt.Printf("export %s=%s\n", basename(secretName), string(secretValue.GetPayload().GetData()))
+			if err := os.Setenv(basename(secretName), string(secretValue.GetPayload().GetData())); err != nil {
+				return errors.Wrap(err, "error os.Setenv")
+			}
 			return nil
 		})
 	}
 	if err := eg.Wait(); err != nil {
 		return errors.Wrap(err, "error eg.Wait")
+	}
+
+	execCommand := flag.Args()
+	log.Println("[DEBUG] executing command:", execCommand)
+	bin, err := exec.LookPath(execCommand[0])
+	if err != nil {
+		return err
+	}
+	if err := syscall.Exec(bin, execCommand, os.Environ()); err != nil {
+		return errors.Wrap(err, "error syscall.Exec")
 	}
 	return nil
 }
