@@ -1,13 +1,26 @@
 package main
 
 import (
+	"context"
+	"flag"
 	"log"
 	"os"
 
+	secretmanager "cloud.google.com/go/secretmanager/apiv1"
+	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/logutils"
+	"google.golang.org/api/iterator"
 )
 
 func main() {
+	ctx := context.Background()
+	if err := run(ctx); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func run(ctx context.Context) error {
 	logLevelCandidates := []logutils.LogLevel{"DEBUG", "INFO", "WARN", "ERROR"}
 	logFilter := &logutils.LevelFilter{
 		Levels:   logLevelCandidates,
@@ -22,4 +35,35 @@ func main() {
 		}
 	}
 	log.SetOutput(logFilter)
+
+	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
+	var flagProjectID string
+	flag.StringVar(&flagProjectID, "project", "", "Google Cloud project id")
+	flag.Parse()
+	if flagProjectID != "" {
+		projectID = flagProjectID
+	}
+	log.Println("[DEBUG] projectID:", projectID)
+
+	// fetch secrets from Google Cloud Secret Manager
+	client, err := secretmanager.NewClient(ctx)
+	if err != nil {
+		return errors.Wrap(err, "failed to create secret manager client")
+	}
+
+	itr := client.ListSecrets(ctx, &secretmanagerpb.ListSecretsRequest{
+		Parent: "projects/" + projectID,
+		// TODO: apply a filter of list secret operation
+	})
+	for {
+		resp, err := itr.Next()
+		if err != nil {
+			if errors.Is(err, iterator.Done) {
+				break
+			}
+			return errors.Wrap(err, "error Next")
+		}
+		log.Println("[DEBUG] ListSecretsResponse:", resp)
+	}
+	return nil
 }
