@@ -3,4 +3,4 @@ A simple CLI tool that allows you to execute a command with secrets stored in Go
 
 ## Acknowledgements
 
-This project is inspired by [ssmwrap](https://github.com/handlename/ssmwrap).  Thanks! @handlename
+This project is inspired by [ssmwrap](https://github.com/handlename/ssmwrap).  Thanks! [@handlename](https://github.com/handlename)
