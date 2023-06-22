@@ -3,13 +3,16 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/logutils"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/api/iterator"
 )
 
@@ -55,15 +58,42 @@ func run(ctx context.Context) error {
 		Parent: "projects/" + projectID,
 		// TODO: apply a filter of list secret operation
 	})
+
+	eg := &errgroup.Group{}
+	eg.SetLimit(25)
 	for {
-		resp, err := itr.Next()
+		secret, err := itr.Next()
 		if err != nil {
 			if errors.Is(err, iterator.Done) {
 				break
 			}
 			return errors.Wrap(err, "error Next")
 		}
-		log.Println("[DEBUG] ListSecretsResponse:", resp)
+		log.Println("[DEBUG] ListSecretsResponse:", secret)
+		secretName := secret.Name
+		eg.Go(func() error {
+			secretValue, err := client.AccessSecretVersion(ctx, &secretmanagerpb.AccessSecretVersionRequest{
+				Name: secretName + "/versions/latest",
+			})
+			if err != nil {
+				return errors.Wrap(err, "error AccessSecretVersion")
+			}
+			log.Println("[DEBUG] AccessSecretVersionResponse:", secretValue)
+			if err := os.Setenv(basename(secretName), string(secretValue.GetPayload().GetData())); err != nil {
+				return errors.Wrap(err, "error os.Setenv")
+			}
+			// FIXME: when the secret value is unfavourable for shell, this will be a problem.
+			fmt.Printf("export %s=%s\n", basename(secretName), string(secretValue.GetPayload().GetData()))
+			return nil
+		})
+	}
+	if err := eg.Wait(); err != nil {
+		return errors.Wrap(err, "error eg.Wait")
 	}
 	return nil
+}
+
+func basename(input string) string {
+	aux := strings.Split(input, "/")
+	return aux[len(aux)-1]
 }
