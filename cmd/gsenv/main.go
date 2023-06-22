@@ -41,8 +41,12 @@ func run(ctx context.Context) error {
 	log.SetOutput(logFilter)
 
 	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
-	var flagProjectID string
+	var (
+		flagProjectID string
+		flagFilter    string
+	)
 	flag.StringVar(&flagProjectID, "project", "", "Google Cloud project id")
+	flag.StringVar(&flagFilter, "filter", "", "Filter lists of secrets (according to the API spec)")
 	flag.Parse()
 	if flagProjectID != "" {
 		projectID = flagProjectID
@@ -57,7 +61,7 @@ func run(ctx context.Context) error {
 
 	itr := client.ListSecrets(ctx, &secretmanagerpb.ListSecretsRequest{
 		Parent: "projects/" + projectID,
-		// TODO: apply a filter of list secret operation
+		Filter: flagFilter,
 	})
 
 	eg := &errgroup.Group{}
