@@ -50,6 +50,9 @@ func run(ctx context.Context) error {
 	flag.Parse()
 	if flagProjectID != "" {
 		projectID = flagProjectID
+		if projectID == "" {
+			return errors.New("--project is required but empty")
+		}
 	}
 	log.Println("[DEBUG] projectID:", projectID)
 
