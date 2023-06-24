@@ -52,7 +52,7 @@ func run(ctx context.Context) error {
 		flagHelp      bool
 		flagVersion   bool
 	)
-	flag.StringVar(&flagProjectID, "project", "", "Google Cloud project id")
+	flag.StringVar(&flagProjectID, "project", "", "Google Cloud project ID (required)")
 	flag.StringVar(&flagFilter, "filter", "", "Filter lists of secrets (according to the API spec)")
 	flag.BoolVar(&flagHelp, "help", false, "Show help")
 	flag.BoolVar(&flagVersion, "version", false, "Show version")
