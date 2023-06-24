@@ -17,6 +17,10 @@ import (
 	"google.golang.org/api/iterator"
 )
 
+var (
+	Version = "dev"
+)
+
 func main() {
 	ctx := context.Background()
 	if err := run(ctx); err != nil {
@@ -44,10 +48,24 @@ func run(ctx context.Context) error {
 	var (
 		flagProjectID string
 		flagFilter    string
+		flagHelp      bool
+		flagVersion   bool
 	)
 	flag.StringVar(&flagProjectID, "project", "", "Google Cloud project id")
 	flag.StringVar(&flagFilter, "filter", "", "Filter lists of secrets (according to the API spec)")
+	flag.BoolVar(&flagHelp, "help", false, "Show help")
+	flag.BoolVar(&flagVersion, "version", false, "Show version")
 	flag.Parse()
+
+	if flagHelp {
+		flag.Usage()
+		return nil
+	}
+	if flagVersion {
+		log.Println("gsenv version", Version)
+		return nil
+	}
+
 	if flagProjectID != "" {
 		projectID = flagProjectID
 		if projectID == "" {
