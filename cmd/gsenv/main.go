@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -62,7 +63,7 @@ func run(ctx context.Context) error {
 		return nil
 	}
 	if flagVersion {
-		log.Println("gsenv version", Version)
+		fmt.Println("gsenv version", Version)
 		return nil
 	}
 
