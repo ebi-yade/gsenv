@@ -9,7 +9,7 @@ builds:
     main: ./cmd/gsenv/main.go
     ldflags:
       - "-s -w"
-#      - "-X main.Version=v{{ .Version }}"
+      - "-X main.Version=v{{ .Version }}"
     goos:
       - darwin
       - linux
