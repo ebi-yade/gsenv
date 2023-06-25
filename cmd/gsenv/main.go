@@ -109,9 +109,11 @@ func run(ctx context.Context) error {
 			if err := os.Setenv(basename(secretName), string(secretValue.GetPayload().GetData())); err != nil {
 				return errors.Wrap(err, "error os.Setenv")
 			}
-			if err := os.Setenv(basename(secretName), string(secretValue.GetPayload().GetData())); err != nil {
+			envName := basename(secretName)
+			if err := os.Setenv(envName, string(secretValue.GetPayload().GetData())); err != nil {
 				return errors.Wrap(err, "error os.Setenv")
 			}
+			log.Println("[INFO] successfully set environment variable:", envName)
 			return nil
 		})
 	}
